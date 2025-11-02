@@ -1,0 +1,174 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Submission Complete | WorkDNA</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        darkBg: '#0a0a13',
+                        cardDark: '#141c24',
+                        primary: '#047857', // Deep Emerald Green
+                        accent: '#14b8a6',  // Bright Teal/Cyan
+                        fail: '#ef4444',
+                        success: '#22c55e',
+                    },
+                }
+            }
+        };
+    </script>
+    <style>
+        /* Base Colors for reference */
+        :root {
+            --color-dark-bg: #0a0a13;
+            --color-deep-teal: #0f4c4c;
+            --color-bright-teal: #14b8a6;
+            --color-emerald: #047857;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            color: #f1f5f9;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+
+            /* --- Custom Geometric Background (Matching Index.html) --- */
+            background-color: var(--color-dark-bg);
+            background-image:
+                /* Top Left Bright Light */
+                radial-gradient(circle at 0% 0%, rgba(20, 184, 166, 0.25) 0%, transparent 20%),
+                /* Bottom Right Bright Light */
+                radial-gradient(circle at 100% 100%, rgba(4, 120, 87, 0.25) 0%, transparent 20%),
+
+                /* Large Geometric Section 1 (Top Left to Center) */
+                linear-gradient(135deg, var(--color-deep-teal) 0%, transparent 40%),
+
+                /* Large Geometric Section 2 (Bottom Left to Center) */
+                linear-gradient(225deg, var(--color-deep-teal) 0%, transparent 40%),
+
+                /* Base radial gradient for depth */
+                radial-gradient(circle at center, #102424 0%, var(--color-dark-bg) 100%);
+            background-size: 100% 100%;
+            /* ----------------------------------- */
+        }
+
+        /* Gradient Text (Matching Index.html) */
+        .gradient-text {
+            background: linear-gradient(90deg, var(--color-emerald), var(--color-bright-teal));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Gradient Button (Matching Index.html) */
+        .btn-gradient {
+            background: linear-gradient(90deg, var(--color-emerald) 0%, var(--color-bright-teal) 100%);
+            color: #fff;
+            box-shadow: 0 0 20px rgba(4, 120, 87, 0.3);
+            transition: all 0.25s ease;
+        }
+
+        .btn-gradient:hover {
+            box-shadow: 0 0 30px rgba(20, 184, 166, 0.4);
+            transform: translateY(-2px);
+        }
+
+        /* Confetti Animation (Colors updated to match theme) */
+        .confetti {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: confetti-fall 5s infinite;
+            opacity: 0;
+        }
+
+        @keyframes confetti-fall {
+            0% {
+                transform: translateY(-100vh) rotate(0deg);
+                opacity: 1;
+            }
+
+            100% {
+                transform: translateY(100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+
+        /* Bounce Animation (Checkmark icon) */
+        .bounce {
+            animation: bounce 1s infinite;
+        }
+
+        @keyframes bounce {
+
+            0%,
+            100% {
+                transform: translateY(-5%);
+            }
+
+            50% {
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+
+<body class="p-6 overflow-hidden">
+    <div class="max-w-3xl mx-auto space-y-8 text-center pt-20">
+
+        <!-- Animated Icon -->
+        <div class="text-7xl text-accent mx-auto w-fit bounce">
+            <!-- Checkmark SVG Icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-24 w-24 mx-auto" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+        </div>
+
+        <!-- Message -->
+        <h1 class="text-5xl font-extrabold gradient-text">Submission Successful!</h1>
+        <p class="text-2xl text-gray-400">Your WorkDNA assessment response has been successfully recorded.</p>
+
+        <!-- Card with Next Steps -->
+        <div class="bg-cardDark p-8 rounded-xl shadow-lg border-t-4 border-accent">
+            <p class="text-lg text-gray-300">
+                You can now close this window. Your results will be reviewed by the hiring team, and you will be
+                contacted shortly regarding the next steps in the recruitment process.
+            </p>
+        </div>
+
+        <div class="pt-6">
+            <a href="/" class="inline-block btn-gradient text-white py-3 px-8 rounded-full shadow-lg font-semibold">
+                Return to Login Portal
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Confetti effect logic
+        // Updated colors to match the Emerald/Teal theme
+        const colors = ['#047857', '#14b8a6', '#4ade80', '#22c55e'];
+        const body = document.body;
+
+        for (let i = 0; i < 50; i++) {
+            const confetti = document.createElement('div');
+            confetti.classList.add('confetti');
+            confetti.style.left = `${Math.random() * 100}vw`;
+            confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            confetti.style.animationDelay = `-${Math.random() * 5}s`;
+            confetti.style.animationDuration = `${5 + Math.random() * 5}s`;
+            body.appendChild(confetti);
+        }
+    </script>
+</body>
+
+</html>

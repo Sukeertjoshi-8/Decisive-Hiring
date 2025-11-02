@@ -1,0 +1,319 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Assessment Results | {{ result.candidateName }}</title>
+    <!-- Tailwind CSS CDN for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary': '#047857',
+                        'accent': '#14b8a6',
+                        'success': '#22c55e',
+                        'fail': '#ef4444',
+                        'warning': '#facc15',
+                        'neutral': '#475569',
+                        'darkBg': '#0a0a13',
+                        'cardDark': '#141c24',
+                    }
+                }
+            }
+        }
+
+        // Color mapping for the pie chart sections
+        const PIE_COLORS = {
+            "TA": "#14b8a6", // Teal/Accent
+            "SL": "#facc15", // Yellow/Warning
+            "ER": "#0ea5e9", // Sky Blue
+            "BP": "#047857", // Emerald/Primary
+            "BS": "#8b5cf6", // Violet
+        };
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f4f4f9;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .score-box {
+            padding: 16px;
+            border-radius: 8px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .pass {
+            background-color: #d1fae5;
+            /* light green */
+            color: #047857;
+            border: 2px solid #047857;
+        }
+
+        .fail {
+            background-color: #fee2e2;
+            /* light red */
+            color: #ef4444;
+            border: 2px solid #ef4444;
+        }
+
+        .skill-bar-container {
+            background-color: #e9ecef;
+            border-radius: 4px;
+            height: 10px;
+            margin-top: 4px;
+        }
+
+        .skill-bar {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease-in-out;
+        }
+
+        /* Custom style for the HR Report table to make it readable */
+        .results-table th {
+            background-color: #f1f5f9;
+            color: #475569;
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .results-table td {
+            padding: 10px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+    </style>
+</head>
+
+<body class="p-6">
+
+    <div class="max-w-6xl mx-auto space-y-8">
+
+        <!-- Header -->
+        <header class="text-center py-6">
+            <h1 class="text-4xl font-extrabold text-gray-800">WorkDNA Assessment Report</h1>
+            <p class="text-xl text-gray-600 mt-2">Candidate: {{ result.candidateName }} (Test ID: {{ result.testId }})
+            </p>
+            <p class="text-lg text-gray-500">Role Assessed: <span class="font-semibold text-primary">{{ result.jobTitle
+                    }}</span></p>
+        </header>
+
+        <!-- Main Scorecard and Behavioral Summary -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+            <!-- Total Score -->
+            <div class="card p-6 col-span-1">
+                <h3 class="text-2xl font-bold mb-4 text-center text-gray-700">Overall WorkDNA Score</h3>
+                {% set score_color = 'success' if result.totalScore >= result.passThreshold else 'fail' %}
+                {% set status_text = 'PASS' if result.totalScore >= result.passThreshold else 'FAIL' %}
+
+                <div class="score-box {% if score_color == 'success' %}pass{% else %}fail{% endif %}">
+                    <p class="text-5xl">{{ result.totalScore }}<span class="text-2xl">%</span></p>
+                    <p class="text-lg mt-2">Status: {{ status_text }} (Threshold: {{ result.passThreshold }}%)</p>
+                </div>
+            </div>
+
+            <!-- Behavioral Metrics -->
+            <div class="card p-6 col-span-2">
+                <h3 class="text-2xl font-bold mb-4 text-gray-700">Behavioral Speed Analysis</h3>
+
+                <div class="grid grid-cols-3 gap-4 text-center mb-4">
+                    <div class="p-3 bg-red-100 rounded-lg">
+                        <p class="text-2xl font-extrabold text-fail">{{ result.behavioralSummary.fastResponses }}</p>
+                        <p class="text-gray-600">Too Fast Responses</p>
+                    </div>
+                    <div class="p-3 bg-green-100 rounded-lg">
+                        <p class="text-2xl font-extrabold text-success">{{ result.behavioralSummary.optimalResponses }}
+                        </p>
+                        <p class="text-gray-600">Optimal Responses</p>
+                    </div>
+                    <div class="p-3 bg-yellow-100 rounded-lg">
+                        <p class="text-2xl font-extrabold text-warning">{{ result.behavioralSummary.slowResponses }}</p>
+                        <p class="text-gray-600">Too Slow Responses</p>
+                    </div>
+                </div>
+
+                <p class="text-lg mt-4 font-semibold text-gray-700">
+                    Avg. Time per Question:
+                    <span class="text-primary">
+                        {% set question_count = result.detailedResults | length %}
+                        {% set avg_time_ms = 0 %}
+                        {% if question_count > 0 %}
+                        {% set avg_time_ms = result.behavioralSummary.totalTimeMs / question_count %}
+                        {% endif %}
+                        {% set avg_time_sec = (avg_time_ms / 1000) | round(2) %}
+                        {{ avg_time_sec }} seconds
+                    </span>
+                </p>
+                <p class="text-sm text-gray-500">
+                    (Optimal response time is 30 - 60 seconds. Fast responses indicate poor contemplation; slow
+                    responses indicate inefficiency.)
+                </p>
+            </div>
+        </div>
+
+        <!-- Skill Breakdown (WorkDNA Blueprint) -->
+        <div class="card p-6">
+            <h2 class="text-2xl font-bold mb-6 text-gray-700">WorkDNA Blueprint: Trait Scores</h2>
+
+            <!-- New Grid Layout for Pie Chart and Bar Chart -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+                <!-- Pie Chart Section -->
+                <div class="lg:col-span-1 flex flex-col items-center">
+                    <h3 class="text-xl font-semibold mb-4 text-gray-600">Trait Distribution</h3>
+                    <canvas id="skill-pie-chart" width="300" height="300" class="mx-auto"></canvas>
+                    <div id="pie-legend" class="mt-4 text-left space-y-1"></div>
+                </div>
+
+                <!-- Bar Chart/List Section -->
+                <div class="lg:col-span-2 space-y-4">
+                    {% for key, score in result.skillScores.items() %}
+                    {% set display_name = result.traitMap[key] %}
+                    {% set bar_width = [0, [100, score] | min] | max %}
+                    {% set bar_color = 'bg-success' if bar_width >= 75 else 'bg-warning' if bar_width >= 50 else
+                    'bg-fail'
+                    %}
+
+                    <div>
+                        <div class="flex justify-between items-center text-sm font-medium text-gray-700">
+                            <span>{{ display_name }}</span>
+                            <span>{{ bar_width }} / 100</span>
+                        </div>
+                        <div class="skill-bar-container">
+                            <div class="skill-bar {{ bar_color }}" style="width: {{ bar_width }}%;"></div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed Question Review -->
+        <div class="card p-6">
+            <h2 class="text-2xl font-bold mb-6 text-gray-700">Detailed Question Review</h2>
+            <div class="space-y-6">
+                <table class="results-table w-full">
+                    <thead>
+                        <tr>
+                            <th>Q#</th>
+                            <th>Prompt</th>
+                            <th>Chosen Option</th>
+                            <th>Time (s)</th>
+                            <th>Behavior</th>
+                            <th>Score Impact</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in result.detailedResults %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td>{{ item.prompt[:80] }}...</td>
+                            <td>{{ item.chosenOptionText[:60] }}...</td>
+                            <td>{{ (item.timeTakenMs / 1000) | round(2) }}</td>
+                            <td
+                                class="{% if 'Too Fast' in item.timeBehavior %}text-fail{% elif 'Too Slow' in item.timeBehavior %}text-warning{% else %}text-success{% endif %}">
+                                {{ item.timeBehavior.split(' ')[0] }}
+                            </td>
+                            <td>
+                                {% for trait_key, impact in item.rawScoreImpact.items() %}
+                                <span
+                                    class="text-xs font-mono px-2 py-0.5 rounded-full mr-1 {% if impact > 0 %}bg-green-100 text-green-800{% elif impact < 0 %}bg-red-100 text-red-800{% else %}bg-gray-100 text-gray-600{% endif %}">
+                                    {{ trait_key }}: {{ impact }}
+                                </span>
+                                {% endfor %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="text-center pt-4">
+            <a href="{{ url_for('hr_dashboard') }}" class="text-primary hover:underline font-medium">← Back to HR
+                Dashboard</a>
+        </div>
+    </div>
+
+    <!-- JavaScript for Drawing the Pie Chart -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const skillScores = JSON.parse('{{ result.skillScores | tojson | safe }}');
+            const traitMap = JSON.parse('{{ result.traitMap | tojson | safe }}');
+            const canvas = document.getElementById('skill-pie-chart');
+            const ctx = canvas.getContext('2d');
+            const legendDiv = document.getElementById('pie-legend');
+
+            const scores = Object.keys(skillScores).map(key => ({
+                key: key,
+                name: traitMap[key],
+                score: skillScores[key],
+                color: PIE_COLORS[key]
+            }));
+
+            // Calculate total score for proportionality
+            const totalScore = scores.reduce((sum, item) => sum + item.score, 0);
+
+            if (totalScore === 0) {
+                // Handle case where total score is 0
+                ctx.fillText("No score data available for charting.", 50, 150);
+                return;
+            }
+
+            let startAngle = 0;
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const radius = 100;
+
+            // Draw Pie Chart
+            scores.forEach((item) => {
+                const sliceAngle = (item.score / totalScore) * 2 * Math.PI;
+                const endAngle = startAngle + sliceAngle;
+
+                ctx.fillStyle = item.color;
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+                ctx.closePath();
+                ctx.fill();
+
+                // Add text label to the slice (optional: can be complex)
+                /*
+                const midAngle = startAngle + sliceAngle / 2;
+                const textX = centerX + Math.cos(midAngle) * (radius / 1.5);
+                const textY = centerY + Math.sin(midAngle) * (radius / 1.5);
+                ctx.fillStyle = 'white';
+                ctx.textAlign = 'center';
+                ctx.font = '10px Inter';
+                ctx.fillText(`${item.score}%`, textX, textY);
+                */
+
+                // Add legend entry
+                const legendEntry = document.createElement('div');
+                legendEntry.className = 'flex items-center space-x-2 text-gray-700';
+                legendEntry.innerHTML = `
+                    <span class="w-3 h-3 rounded-full" style="background-color: ${item.color};"></span>
+                    <span class="text-sm">${item.name} (${item.score}%)</span>
+                `;
+                legendDiv.appendChild(legendEntry);
+
+                startAngle = endAngle;
+            });
+
+        });
+    </script>
+
+</body>
+
+</html>

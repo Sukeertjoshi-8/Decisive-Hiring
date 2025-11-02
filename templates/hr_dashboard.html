@@ -1,0 +1,97 @@
+<!doctype html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>HR Dashboard</title>
+  <!-- Using Tailwind for a cleaner look -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f4f4f9;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 30px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: white;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    th,
+    td {
+      padding: 12px 15px;
+      text-align: left;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    th {
+      background-color: #007bff;
+      color: white;
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.8rem;
+    }
+
+    tr:hover {
+      background-color: #f9fafb;
+    }
+
+    .score-pass {
+      color: #15803d;
+      font-weight: bold;
+    }
+
+    .score-fail {
+      color: #dc2626;
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h2 class="text-3xl font-bold text-gray-800 mb-6">HR Dashboard: Assessment Results</h2>
+    <table class="text-sm">
+      <thead>
+        <tr>
+          <th>ID (HR Link)</th>
+          <th>Username</th>
+          <th>Score</th>
+          <th>Status</th>
+          <th>Submitted At (UTC)</th>
+          <th>Role</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in results %}
+        <tr>
+          <td><a href="{{ url_for('show_assessment_result', result_id=r.id) }}" class="text-blue-600 hover:underline">{{
+              r.id }}</a></td>
+          <td>{{ r.username }}</td>
+          <td class="{% if r.score >= 75 %}score-pass{% else %}score-fail{% endif %}">{{ '%.2f'|format(r.score) }}%</td>
+          <td class="{% if r.score >= 75 %}score-pass{% else %}score-fail{% endif %}">{{ 'PASS' if r.score >= 75 else
+            'FAIL' }}</td>
+          <td>{{ r.submitted_at }}</td>
+          <td>{{ r.role }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div class="mt-6 text-right">
+      <a href="{{ url_for('hr_create_test') }}" class="text-blue-600 hover:underline">← Create New Test</a> |
+      <a href="/" class="text-gray-600 hover:underline">Return to Candidate Login</a>
+    </div>
+  </div>
+</body>
+
+</html>

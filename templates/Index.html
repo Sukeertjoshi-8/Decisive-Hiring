@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>Candidate Portal | WorkDNA</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script>
+        const IS_LOGGED_IN = '{{ is_logged_in | tojson | safe }}' === 'true';
+        const ASSIGNED_ROLE = '{{ session.assigned_role or "" }}';
+        const JOB_PROFILES = {{ job_profiles | tojson | safe }};
+        const PASS_THRESHOLD = {{ ASSESSMENT_DATA.PASS_THRESHOLD | tojson | safe }};
+
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        darkBg: '#0a0a13',
+                        cardDark: '#141c24', // Slightly darker slate/blue for card
+                        primary: '#047857',  // Deep Emerald Green
+                        accent: '#14b8a6',   // Bright Teal/Cyan
+                        fail: '#ef4444',
+                        success: '#22c55e',
+                    },
+                    backgroundImage: {
+                        // New gradient blend from deep teal to bright cyan
+                        'gradient-btn': 'linear-gradient(90deg, #047857 0%, #14b8a6 100%)',
+                        // Custom dark background reflecting the attached image's moody deep green/blue
+                        'gradient-bg': 'radial-gradient(circle at top left, #0f4c4c 0%, #0a0a13 100%)',
+                    }
+                }
+            }
+        };
+
+        function fetchJobDetails(jobKey) {
+            const data = JOB_PROFILES[jobKey];
+            const detailsDiv = document.getElementById('job-details');
+            if (data) {
+                detailsDiv.innerHTML = `
+          <div class="bg-cardDark/80 backdrop-blur-md p-5 rounded-xl border border-primary/50 shadow-inner">
+            <h4 class="text-lg font-bold text-accent mb-3 border-b border-primary pb-2">Assessment Rules</h4>
+            <div class="space-y-2 text-sm text-gray-300">
+              <p>Total Questions: <span class="font-semibold text-accent">${data.questions.length}</span></p>
+              <p>Time Limit: <span class="font-semibold text-accent">10 minutes</span></p>
+              <p>Passing Score: <span class="font-semibold text-success">${PASS_THRESHOLD}%</span></p>
+              <h5 class="font-bold mt-4 text-accent">Key Skills Assessed</h5>
+              <ul class="list-disc list-inside ml-4 text-gray-400 space-y-1">
+                ${data.skills_required.map(skill => `<li>${skill}</li>`).join('')}
+              </ul>
+            </div>
+          </div>`;
+                document.getElementById('start-assessment-btn').disabled = false;
+            } else {
+                detailsDiv.innerHTML = `<p class="text-center text-fail mt-4">Job profile details not found.</p>`;
+                document.getElementById('start-assessment-btn').disabled = true;
+            }
+        }
+
+        function startAssessment() {
+            let jobKey = ASSIGNED_ROLE || document.getElementById('job-select').value;
+            if (jobKey && JOB_PROFILES[jobKey]) {
+                window.location.href = `/candidate/test/${encodeURIComponent(jobKey)}`;
+            } else {
+                document.getElementById('error-message').textContent = 'Please select a valid job profile.';
+            }
+        }
+
+        window.onload = () => {
+            if (IS_LOGGED_IN && ASSIGNED_ROLE) {
+                fetchJobDetails(ASSIGNED_ROLE);
+            } else if (IS_LOGGED_IN) {
+                const jobSelect = document.getElementById('job-select');
+                jobSelect.addEventListener('change', (e) => fetchJobDetails(e.target.value));
+                fetchJobDetails(jobSelect.value);
+            }
+        };
+    </script>
+
+    <style>
+        /* Base Colors for reference */
+        :root {
+            --color-dark-bg: #0a0a13;
+            --color-deep-teal: #0f4c4c;
+            --color-bright-teal: #14b8a6;
+            --color-emerald: #047857;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            color: #f1f5f9;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+
+            /* --- Custom Geometric Background --- */
+            background-color: var(--color-dark-bg);
+            background-image:
+                /* Top Left Bright Light */
+                radial-gradient(circle at 0% 0%, rgba(20, 184, 166, 0.25) 0%, transparent 20%),
+                /* Bottom Right Bright Light */
+                radial-gradient(circle at 100% 100%, rgba(4, 120, 87, 0.25) 0%, transparent 20%),
+
+                /* Large Geometric Section 1 (Top Left to Center) */
+                linear-gradient(135deg, var(--color-deep-teal) 0%, transparent 40%),
+
+                /* Large Geometric Section 2 (Bottom Left to Center) */
+                linear-gradient(225deg, var(--color-deep-teal) 0%, transparent 40%),
+
+                /* Base radial gradient for depth */
+                radial-gradient(circle at center, #102424 0%, var(--color-dark-bg) 100%);
+            background-size: 100% 100%;
+            /* ----------------------------------- */
+        }
+
+        .card {
+            background: rgba(20, 28, 36, 0.85);
+            /* cardDark/85 */
+            backdrop-filter: blur(18px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 20px;
+            /* Shadow based on the primary color */
+            box-shadow: 0 10px 40px rgba(4, 120, 87, 0.25);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-3px);
+            /* Hover shadow based on the accent color */
+            box-shadow: 0 20px 60px rgba(20, 184, 166, 0.3);
+        }
+
+        input,
+        select {
+            background: rgba(15, 15, 28, 0.9);
+            color: #f1f5f9;
+            border: 1px solid #2d2d3a;
+            border-radius: 10px;
+            padding: 12px;
+            width: 100%;
+            transition: all 0.2s;
+        }
+
+        input:focus,
+        select:focus {
+            border-color: var(--color-emerald);
+            /* Focus border color: Deep Emerald */
+            box-shadow: 0 0 0 3px rgba(4, 120, 87, 0.25);
+            outline: none;
+        }
+
+        .btn-gradient {
+            /* Applying the new emerald-teal gradient */
+            background: linear-gradient(90deg, var(--color-emerald) 0%, var(--color-bright-teal) 100%);
+            color: #fff;
+            font-weight: 600;
+            border: none;
+            border-radius: 10px;
+            padding: 12px;
+            width: 100%;
+            transition: all 0.25s ease;
+            box-shadow: 0 0 20px rgba(4, 120, 87, 0.3);
+        }
+
+        .btn-gradient:hover {
+            box-shadow: 0 0 30px rgba(20, 184, 166, 0.4);
+            /* Hover shadow based on accent color */
+            transform: translateY(-2px);
+        }
+
+        .error {
+            color: #f87171;
+            font-weight: 600;
+        }
+
+        .gradient-text {
+            /* Applying the new emerald-teal gradient text effect */
+            background: linear-gradient(90deg, var(--color-emerald), var(--color-bright-teal));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+    </style>
+</head>
+
+<body class="p-6">
+
+    <div class="max-w-md w-full space-y-8">
+
+        <header class="text-center py-4">
+            <h1 class="text-5xl font-extrabold gradient-text">DeciHire</h1>
+            <p class="text-gray-400 mt-2 text-lg">Predicting success, driven by data.</p>
+        </header>
+
+        <div class="card p-8">
+
+            {% if not is_logged_in %}
+
+            <!-- Login View -->
+            <h2 class="text-3xl font-bold mb-6 text-center gradient-text">Candidate Login</h2>
+            <form action="{{ url_for('login') }}" method="POST" class="space-y-4">
+                <input type="text" name="name" placeholder="Your Full Name" required>
+                <input type="text" name="test_id" placeholder="Employer Test ID (e.g., test123)" required>
+                <button type="submit" class="btn-gradient">Access Assessment</button>
+            </form>
+            {% if error %}<p class="error mt-3 text-center">{{ error }}</p>{% endif %}
+
+            {% else %}
+
+            <!-- Role Selection -->
+            <h2 class="text-2xl font-bold mb-4 gradient-text">Welcome, {{ session.candidate_name }}</h2>
+
+            {% if session.assigned_role %}
+            <div class="bg-cardDark border-l-4 border-primary text-gray-300 p-4 rounded-lg shadow-inner">
+                <p class="font-semibold mb-2 text-primary">Assigned Assessment:</p>
+                <p class="text-xl font-extrabold text-accent">{{ session.assigned_role }}</p>
+            </div>
+            {% else %}
+            <p class="mb-3 text-sm text-gray-400">Please select the role for your assessment:</p>
+            <select id="job-select">
+                {% for job_key in job_profiles.keys() %}
+                <option value="{{ job_key }}">{{ job_key }}</option>
+                {% endfor %}
+            </select>
+            {% endif %}
+
+            <div id="job-details" class="mt-6"></div>
+            <p id="error-message" class="error mt-3 text-center"></p>
+
+            <button id="start-assessment-btn" onclick="startAssessment()" disabled class="btn-gradient mt-6">
+                Start Assessment
+            </button>
+
+            <div class="text-center mt-4">
+                <a href="{{ url_for('logout') }}"
+                    class="text-gray-400 hover:text-accent transition text-sm font-medium">Logout</a>
+            </div>
+
+            {% endif %}
+        </div>
+    </div>
+</body>
+
+</html>

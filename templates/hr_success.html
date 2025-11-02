@@ -1,0 +1,92 @@
+<!doctype html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>Test Created</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f4f4f9;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: white;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    h2 {
+      color: #15803d;
+      font-size: 2rem;
+      font-weight: bold;
+      margin-bottom: 15px;
+    }
+
+    p {
+      font-size: 1.1rem;
+      color: #374151;
+      margin-bottom: 10px;
+    }
+
+    b {
+      display: block;
+      font-size: 1.5rem;
+      color: #007bff;
+      margin: 15px 0;
+      padding: 10px;
+      background-color: #e5f1ff;
+      border-radius: 6px;
+    }
+
+    ul {
+      text-align: left;
+      margin-top: 20px;
+      padding-left: 20px;
+      list-style: disc;
+    }
+
+    a {
+      color: #007bff;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h2 class="text-success">Test Key Generated!</h2>
+    <p>Test successfully created for role: <span class="font-semibold">{{ role }}</span></p>
+    <p>Share this unique Test Key with candidates:</p>
+    <b>{{ test_key }}</b>
+
+    <p class="mt-5">
+      <a href="{{ url_for('hr_dashboard') }}" class="inline-block px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">View
+        Dashboard</a>
+      <span class="text-gray-400">|</span>
+      <a href="{{ url_for('hr_create_test') }}"
+        class="inline-block px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">Generate Another Test</a>
+    </p>
+    <div class="mt-5 border-t pt-4 text-gray-500">
+      <p class="font-semibold">Preview questions (for internal HR reference):</p>
+      <ul class="text-sm">
+        {% for q in questions %}
+        <li>{{ q.prompt }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</body>
+
+</html>

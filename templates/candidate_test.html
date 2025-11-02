@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>Assessment | WorkDNA</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Data passed from Flask is safely loaded here
+        const jobKey = "{{ job_key | safe }}";
+        const questionsData = {{ questions | tojson | safe }};
+        const totalTimeMinutes = {{ time_limit_minutes | safe }};
+
+        let currentQuestionIndex = 0;
+        let answers = {};
+        let times = {};
+        let questionStartTime = Date.now();
+        let timerInterval;
+
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        darkBg: '#0a0a13',
+                        cardDark: '#141c24',
+                        primary: '#047857', // Deep Emerald Green
+                        accent: '#14b8a6',  // Bright Teal/Cyan
+                        fail: '#ef4444',
+                        success: '#22c55e',
+                        neutralText: '#e2e8f0', // Light slate for general text
+                    },
+                    backgroundImage: {
+                        'gradient-btn': 'linear-gradient(90deg, #047857 0%, #14b8a6 100%)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Base Colors for reference */
+        :root {
+            --color-dark-bg: #0a0a13;
+            --color-deep-teal: #0f4c4c;
+            --color-bright-teal: #14b8a6;
+            --color-emerald: #047857;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            color: #f1f5f9;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+
+            /* --- Custom Geometric Background (Matching Index.html) --- */
+            background-color: var(--color-dark-bg);
+            background-image:
+                /* Top Left Bright Light */
+                radial-gradient(circle at 0% 0%, rgba(20, 184, 166, 0.25) 0%, transparent 20%),
+                /* Bottom Right Bright Light */
+                radial-gradient(circle at 100% 100%, rgba(4, 120, 87, 0.25) 0%, transparent 20%),
+                /* Large Geometric Section 1 (Top Left to Center) */
+                linear-gradient(135deg, var(--color-deep-teal) 0%, transparent 40%),
+                /* Large Geometric Section 2 (Bottom Left to Center) */
+                linear-gradient(225deg, var(--color-deep-teal) 0%, transparent 40%),
+                /* Base radial gradient for depth */
+                radial-gradient(circle at center, #102424 0%, var(--color-dark-bg) 100%);
+            background-size: 100% 100%;
+        }
+
+        .card {
+            background: rgba(20, 28, 36, 0.85);
+            /* cardDark/85 */
+            backdrop-filter: blur(18px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(4, 120, 87, 0.25);
+            transition: all 0.3s ease;
+        }
+
+        /* Dynamic Motion on Hover (Matching Index.html) */
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 20px 60px rgba(20, 184, 166, 0.3);
+        }
+
+        .option-label {
+            display: block;
+            background: #1f2937;
+            /* Darker option background */
+            color: #f1f5f9;
+            margin: 8px 0;
+            padding: 16px;
+            border-radius: 10px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .option-label:hover {
+            border-color: var(--color-bright-teal);
+            background: #283441;
+        }
+
+        .option-label input:checked {
+            accent-color: var(--color-bright-teal);
+        }
+
+        .option-label input:checked+span {
+            font-weight: bold;
+            color: var(--color-bright-teal);
+        }
+
+        .timer-red {
+            color: #ef4444;
+            /* fail color */
+            font-weight: bold;
+        }
+
+        .btn-gradient {
+            background: linear-gradient(90deg, var(--color-emerald) 0%, var(--color-bright-teal) 100%);
+            color: #fff;
+            font-weight: 600;
+            border: none;
+            border-radius: 10px;
+            padding: 12px 24px;
+            transition: all 0.25s ease;
+            box-shadow: 0 0 15px rgba(4, 120, 87, 0.5);
+        }
+
+        .btn-gradient:hover {
+            box-shadow: 0 0 25px rgba(20, 184, 166, 0.6);
+            transform: translateY(-1px);
+        }
+
+        /* Sand Clock Animation */
+        @keyframes spin-hourglass {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            50% {
+                transform: rotate(180deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .sand-clock {
+            animation: spin-hourglass 4s infinite linear;
+            display: inline-block;
+            margin-right: 8px;
+            /* Spacing between icon and text */
+        }
+    </style>
+</head>
+
+<body class="p-6">
+    <div class="max-w-xl mx-auto space-y-6">
+
+        <!-- Header -->
+        <div class="flex justify-between items-center pb-4 border-b border-gray-700">
+            <h1 class="text-2xl font-bold text-neutralText">WorkDNA Assessment</h1>
+
+            <!-- Timer Display with Sand Clock -->
+            <div id="timer-container" class="flex items-center text-xl font-mono text-accent">
+                <!-- Sand Clock SVG Icon -->
+                <svg id="sand-clock-icon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 sand-clock"
+                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <path d="M12 2v20M5 2h14l-2 5-6 6-6-6zM5 22h14l-2-5-6-6-6 6z" />
+                </svg>
+                <div id="timer-display"></div>
+            </div>
+            <!-- End Timer Display -->
+
+        </div>
+
+        <!-- Assessment Card -->
+        <div class="card p-6">
+            <div id="question-container">
+                <p class="text-center text-gray-500">Loading assessment...</p>
+            </div>
+
+            <div class="progress h-2 mt-6 bg-gray-700 rounded-full">
+                <div id="progress-bar" class="h-full bg-accent rounded-full transition-all duration-300 ease-in-out"
+                    style="width: 0%;"></div>
+            </div>
+            <p class="text-xs text-right text-gray-400 mt-1"><span id="q-count">0</span> of <span id="q-total">{{
+                    questionsData | length }}</span></p>
+
+        </div>
+    </div>
+
+    <script>
+        // --- Timer Logic ---
+        function startTimer() {
+            let timeLeftSeconds = totalTimeMinutes * 60;
+            const timerDisplay = document.getElementById("timer-display");
+            const timerContainer = document.getElementById("timer-container");
+            const sandClockIcon = document.getElementById("sand-clock-icon");
+
+
+            function updateTimer() {
+                const minutes = Math.floor(timeLeftSeconds / 60);
+                const seconds = timeLeftSeconds % 60;
+                const timeString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+                timerDisplay.textContent = timeString;
+
+                if (timeLeftSeconds <= 300) { // 5 minutes remaining
+                    // Apply red color class and remove accent color class
+                    timerContainer.classList.add('timer-red');
+                    timerContainer.classList.remove('text-accent');
+                    sandClockIcon.classList.add('timer-red');
+                    sandClockIcon.classList.remove('text-accent');
+                } else {
+                    // Apply accent color class and remove red color class
+                    timerContainer.classList.remove('timer-red');
+                    timerContainer.classList.add('text-accent');
+                    sandClockIcon.classList.remove('timer-red');
+                    sandClockIcon.classList.add('text-accent');
+                }
+
+
+                if (timeLeftSeconds <= 0) {
+                    clearInterval(timerInterval);
+                    document.getElementById("question-container").innerHTML = `<h2 class="text-xl text-fail font-bold text-center">Time's Up! Submitting automatically...</h2>`;
+                    submitAll();
+                } else {
+                    timeLeftSeconds--;
+                }
+            }
+            updateTimer();
+            timerInterval = setInterval(updateTimer, 1000);
+        }
+
+        // --- Question Navigation and Display ---
+        function showQuestion() {
+            if (currentQuestionIndex >= questionsData.length) {
+                return submitAll();
+            }
+
+            const q = questionsData[currentQuestionIndex];
+            const qDiv = document.getElementById("question-container");
+
+            // Render the question content
+            qDiv.innerHTML = `
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold text-primary">Question ${currentQuestionIndex + 1} of ${questionsData.length}</h3>
+                <p class="text-xl mt-2 text-neutralText">${q.prompt}</p>
+            </div>
+            <div class="options space-y-2">
+                ${q.options.map((opt, idx) => `
+                    <label class="option-label">
+                        <input type="radio" name="q_select" value="${idx}" class="mr-3">
+                        <span class="text-neutralText">${opt.text}</span>
+                    </label>
+                `).join('')}
+            </div>
+            <div class="mt-6 flex justify-end">
+                <button onclick="nextQuestion()" class="btn-gradient">
+                    ${currentQuestionIndex === questionsData.length - 1 ? 'Finish Assessment' : 'Next Question'}
+                </button>
+            </div>
+        `;
+
+            // Update progress bar
+            const progressPercent = ((currentQuestionIndex + 1) / questionsData.length) * 100;
+            document.getElementById("progress-bar").style.width = `${progressPercent}%`;
+            document.getElementById("q-count").textContent = currentQuestionIndex + 1;
+
+            // Reset and start timer for this question
+            questionStartTime = Date.now();
+        }
+
+        function nextQuestion() {
+            const selected = document.querySelector(`input[name="q_select"]:checked`);
+            if (!selected) {
+                // Using a clean modal/message instead of alert()
+                document.getElementById("question-container").insertAdjacentHTML('afterbegin',
+                    '<div id="alert" class="bg-fail text-white p-3 rounded mb-4 font-semibold">Please select an option before moving forward!</div>');
+                setTimeout(() => document.getElementById("alert")?.remove(), 2000);
+                return;
+            }
+
+            const now = Date.now();
+            const elapsed = (now - questionStartTime); // Time in milliseconds
+
+            times[currentQuestionIndex] = elapsed;
+            answers[currentQuestionIndex] = parseInt(selected.value);
+
+            currentQuestionIndex++;
+            showQuestion();
+        }
+
+        // --- Submission Logic (CRITICAL FIX) ---
+        function submitAll() {
+            clearInterval(timerInterval);
+            document.getElementById("question-container").innerHTML = `
+            <div class="text-center py-10">
+                <h2 class="text-xl text-primary font-bold">Submitting and calculating your WorkDNA Blueprint...</h2>
+                <p class="text-gray-500 mt-2">Please wait, do not close this window.</p>
+            </div>
+        `;
+
+            // 1. Prepare data structure
+            const assessmentData = {
+                jobKey: jobKey,
+                answers: Object.keys(answers).map(qIndex => ({
+                    questionId: questionsData[qIndex].id,
+                    selectedOptionIndex: answers[qIndex],
+                    timeTakenMs: times[qIndex]
+                }))
+            };
+
+            // 2. Send data to Flask backend
+            fetch("/assess", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(assessmentData)
+            })
+                .then(res => res.json())
+                .then(data => {
+                    // CRITICAL FIX: Backend returns a redirect_url via JSON.
+                    if (data.redirect_url) {
+                        window.location.href = data.redirect_url;
+                    } else {
+                        // Handle API errors (e.g., job profile not found)
+                        document.getElementById("question-container").innerHTML = `
+                    <div class="text-center py-10">
+                        <h2 class="text-xl text-fail font-bold">Submission Error</h2>
+                        <p class="text-gray-500 mt-2">${data.error || 'An unexpected error occurred during scoring.'}</p>
+                    </div>
+                `;
+                    }
+                })
+                .catch(error => {
+                    document.getElementById("question-container").innerHTML = `
+                <div class="text-center py-10">
+                    <h2 class="text-xl text-fail font-bold">Network Error</h2>
+                    <p class="text-gray-500 mt-2">Could not connect to the server. See console for details.</p>
+                </div>
+            `;
+                    console.error('Fetch Error:', error);
+                });
+        }
+
+        // --- Initialization ---
+        window.onload = () => {
+            if (questionsData.length > 0) {
+                startTimer();
+                showQuestion();
+            } else {
+                document.getElementById("question-container").innerHTML = '<p class="text-center text-xl text-fail">No assessment questions found for this profile.</p>';
+            }
+        };
+    </script>
+</body>
+
+</html>
